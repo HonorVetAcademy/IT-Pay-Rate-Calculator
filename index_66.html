@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HonorVet Pay Rate Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --navy:#0A1526;
+  --navy-2:#0F2038;
+  --gold:#C9A757;
+  --gold-light:#E4CD93;
+  --ink:#181D28;
+  --slate:#68707F;
+  --line:#E4E8EE;
+  --green:#1E8E5A;
+  --green-dark:#0E4A32;
+  --red:#B3261E;
+  --blue-tint:#EEF3FC;
+  --blue-line:#D9E4F7;
+  --gold-tint:#FDF6E3;
+  --gold-tint-line:#F0E2B4;
+  --green-tint:#E7F6EE;
+  --green-tint-line:#C7E9D6;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{margin:0;background:#F3F5F8;color:var(--ink);font-family:'Poppins',sans-serif;-webkit-font-smoothing:antialiased;overflow-y:auto;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  background:linear-gradient(150deg,var(--navy) 0%,var(--navy-2) 100%);
+  color:#fff;
+  padding:9px 22px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+  border-bottom:1px solid rgba(201,167,87,0.3);
+}
+.logo-badge{
+  width:26px;height:26px;border-radius:7px;
+  background:linear-gradient(135deg,var(--green),#0E6B44);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:16px;color:#fff;flex-shrink:0;
+}
+.brand{display:flex;align-items:center;gap:10px;margin-right:6px;}
+.brand img{height:26px;width:auto;display:block;background:#fff;border-radius:6px;padding:2px 8px;}
+.brand-name{font-weight:700;font-size:13.5px;letter-spacing:0.2px;}
+.brand-tag{font-size:9px;letter-spacing:1.2px;color:#93A0B8;font-weight:600;text-transform:uppercase;padding-left:8px;border-left:1px solid rgba(255,255,255,0.18);}
+
+.topbar-tabs{display:flex;gap:6px;margin-left:auto;}
+.topbar-tabs button{
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.08);
+  color:#B7C0D1;
+  font-family:'Poppins',sans-serif;
+  font-weight:600;
+  font-size:11px;
+  padding:6px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background .15s, color .15s;
+}
+.topbar-tabs button:hover{color:#fff;}
+.topbar-tabs button.active{background:#fff;color:var(--navy);}
+
+.topbar-actions{display:flex;gap:8px;}
+.tb-btn{
+  border:none;border-radius:7px;padding:6px 12px;font-family:'Poppins',sans-serif;font-weight:600;
+  font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:#fff;
+  transition:filter .15s, transform .15s;
+}
+.tb-btn:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.tb-btn.pdf{background:linear-gradient(135deg,#C23A32,#9A2E2E);}
+.tb-btn.xls{background:linear-gradient(135deg,#1E8E5A,#166B44);}
+
+/* ---------- Banner ---------- */
+.banner{
+  background:linear-gradient(135deg,#EAF7EF,#DFF3E7);
+  border-bottom:1px solid var(--green-tint-line);
+  padding:7px 22px;
+  font-size:11.5px;
+  color:#1C4632;
+  display:flex;align-items:center;gap:10px;
+}
+.banner .chk{
+  width:18px;height:18px;border-radius:5px;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;
+}
+.banner b{color:#0E4A32;}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1500px;margin:0 auto;padding:8px 18px 10px;}
+.cols{display:grid;grid-template-columns:1.05fr 1.05fr 1.15fr;gap:10px;align-items:start;}
+.cols-2{grid-template-columns:1fr 1fr;}
+.cols-clubbed{grid-template-columns:0.85fr 1.15fr;}
+.input-stack{display:flex;flex-direction:column;gap:10px;}
+.scenario-side-by-side{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.scenario-side-by-side .scenario-block{padding:8px 0 8px;border-top:none;margin-top:0;}
+.scenario-side-by-side .scenario-a{border-right:1px solid var(--line);padding-right:10px;}
+.scenario-side-by-side .scenario-b{padding-left:10px;}
+@media(max-width:1100px){.cols-clubbed{grid-template-columns:1fr;}.scenario-side-by-side{grid-template-columns:1fr;}.scenario-side-by-side .scenario-a{border-right:none;border-bottom:1px solid var(--line);padding-right:0;}.scenario-side-by-side .scenario-b{padding-left:0;}}
+.results-banner{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:22px 0 12px;
+  padding:12px 18px;
+  border-radius:12px;
+  background:linear-gradient(120deg,var(--navy) 0%,var(--navy-2) 55%,#1B3E63 100%);
+  position:relative;
+  overflow:hidden;
+}
+.results-banner::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(120deg,transparent 0%,rgba(201,167,87,0.18) 45%,transparent 60%);
+  animation:sheen 5s ease-in-out infinite;
+}
+@keyframes sheen{0%,100%{transform:translateX(-30%);}50%{transform:translateX(30%);}}
+.results-banner-ic{
+  width:32px;height:32px;border-radius:9px;background:rgba(201,167,87,0.18);
+  border:1px solid rgba(201,167,87,0.5);color:var(--gold-light);
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;
+  position:relative;z-index:1;
+}
+.results-banner-title{font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:#fff;letter-spacing:-0.2px;position:relative;z-index:1;}
+.results-banner-sub{font-size:11px;color:#AEB9CC;margin-top:1px;position:relative;z-index:1;}
+
+.scenario-results{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+@media(max-width:1100px){.cols{grid-template-columns:1fr;}.scenario-results{grid-template-columns:1fr;}}
+
+.panel{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 1px 2px rgba(10,21,38,0.04), 0 14px 30px -22px rgba(10,21,38,0.2);
+  align-self:start;
+  height:fit-content;
+}
+.panel-head{padding:6px 12px;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--line);}
+.panel-head .ic{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.panel-head h3{margin:0;font-size:13px;font-weight:600;color:var(--navy);font-family:'Fraunces',serif;letter-spacing:-0.1px;}
+.panel-head span{display:block;font-size:8.5px;color:var(--slate);letter-spacing:0.6px;text-transform:uppercase;font-weight:600;margin-top:1px;}
+.panel-body{padding:7px 12px 9px;}
+
+.panel.blue{border-left:3px solid #2C5AA8;}
+.panel.blue .panel-head{background:#fff;}
+.panel.blue .ic{background:#2C5AA8;color:#fff;}
+.panel.gold{border-left:3px solid var(--gold-deep);}
+.panel.gold .panel-head{background:#fff;}
+.panel.gold .ic{background:var(--gold-deep);color:#fff;}
+.panel.green .panel-head{background:#fff;}
+.panel.green .ic{background:#177A4D;color:#fff;}
+
+.scenario-a{border-top:3px solid var(--gold);border-left:none;}
+.scenario-b{border-top:3px solid #2C8C8C;border-left:none;}
+.scenario-a .ic{background:var(--gold-deep);}
+.scenario-b .ic{background:#2C8C8C;}
+
+.scenario-block{border-top:1px solid var(--line);padding-top:8px;margin-top:8px;}
+.scenario-block:first-of-type{border-top:none;padding-top:0;margin-top:0;}
+.scenario-block.scenario-a .pay-hero{border-left:3px solid var(--gold);}
+.scenario-block.scenario-b .pay-hero{border-left:3px solid #2C8C8C;}
+.scenario-block-head{display:flex;align-items:center;gap:8px;padding:0 12px 4px;}
+.scenario-block-head div{display:flex;flex-direction:column;}
+.scenario-block-head b{font-family:'Fraunces',serif;font-size:12.5px;color:var(--navy);font-weight:600;}
+.scenario-block-head span{font-size:8.5px;color:var(--slate);text-transform:uppercase;letter-spacing:0.4px;}
+.panel-note{font-size:10.5px;color:var(--slate);line-height:1.6;margin:0;}
+
+.mw-lookup{margin-bottom:4px;}
+.mw-zip-row{display:flex;gap:6px;margin-bottom:6px;}
+.mw-zip-input{
+  flex:1;padding:8px 10px;border:1px solid #D9D2B4;border-radius:8px;
+  font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink);background:#FFFEFB;
+}
+.mw-zip-input.invalid{border-color:var(--red);box-shadow:0 0 0 3px rgba(179,38,30,0.12);}
+.required-text.invalid{border-color:var(--red);box-shadow:0 0 0 3px rgba(179,38,30,0.12);}
+.mw-error{font-size:11px;color:var(--red);font-weight:600;margin:-2px 0 8px;}
+
+.results-locked{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:36px 24px;
+}
+.results-lock-ic{
+  width:44px;height:44px;border-radius:50%;background:#F0F2F5;color:var(--slate);
+  display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px;
+}
+.results-lock-title{font-family:'Fraunces',serif;font-weight:600;font-size:14.5px;color:var(--navy);margin-bottom:6px;}
+.results-lock-msg{font-size:11.5px;color:var(--slate);line-height:1.6;max-width:260px;}
+.mw-lookup-btn{
+  background:var(--green-dark);color:#fff;border:none;border-radius:8px;padding:8px 14px;
+  font-family:'Poppins',sans-serif;font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap;
+}
+.mw-lookup-btn:hover{background:#0E3A2A;}
+.mw-result{background:#F7F8FA;border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin-bottom:6px;}
+.mw-rate{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--slate);padding:3px 0;}
+.mw-rate span b{color:var(--navy);font-weight:700;font-size:10.5px;}
+.mw-rate:not(:last-of-type){border-bottom:1px solid #EAECEF;}
+.mw-rate > b{font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--navy);}
+.mw-flag{margin-top:6px;font-size:11px;font-weight:600;padding:6px 9px;border-radius:7px;}
+.mw-flag.ok{background:#E7F7EE;color:var(--green-dark);}
+.mw-flag.warn{background:#FBEAEA;color:var(--red);}
+
+.mw-modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(10,21,38,0.55);
+  align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(2px);
+}
+.mw-modal-overlay.show{display:flex;}
+.mw-modal{
+  background:#fff;border-radius:16px;padding:28px 30px 24px;max-width:360px;width:90%;
+  text-align:center;box-shadow:0 20px 60px rgba(10,21,38,0.35);
+  border-top:4px solid var(--red);
+}
+.mw-modal-ic{
+  width:44px;height:44px;border-radius:50%;background:#FBEAEA;color:var(--red);
+  display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 12px;
+}
+.mw-modal-title{font-family:'Fraunces',serif;font-weight:600;font-size:18px;color:var(--navy);margin-bottom:8px;}
+.mw-modal-msg{font-size:12.5px;color:var(--slate);line-height:1.6;margin-bottom:18px;}
+.mw-modal-btn{
+  background:var(--navy);color:#fff;border:none;border-radius:8px;padding:10px 24px;
+  font-family:'Poppins',sans-serif;font-weight:600;font-size:13px;cursor:pointer;
+}
+.mw-modal-btn:hover{background:var(--navy-2);}
+.badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:0.3px;padding:1px 7px;border-radius:20px;margin-left:6px;vertical-align:middle;}
+.badge-gold{background:#F5E7B8;color:#8A6A1F;}
+.badge-teal{background:#D3EDED;color:#1C6363;}
+
+.req-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--gold);margin-left:4px;vertical-align:middle;}
+
+.breakdown .section-block{background:#FAFBFC;border-radius:9px;padding:8px 10px 6px;margin-bottom:6px;}
+.breakdown .section-block .section-lbl{margin-top:0;padding-top:0;border-top:none;}
+
+/* ---------- Fields ---------- */
+.field{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #F0F2F5;gap:8px;}
+.field:last-child{border-bottom:none;}
+.field label{font-size:11px;color:#3B4250;font-weight:500;}
+.field label .sub{display:block;font-size:8.5px;color:var(--slate);font-weight:400;margin-top:1px;}
+.input-unit{position:relative;display:flex;align-items:center;}
+.input-unit span{position:absolute;left:11px;font-size:12.5px;color:var(--gold);font-weight:700;pointer-events:none;}
+.input-unit.pctsign span{left:auto;right:11px;}
+.field input{
+  width:100px;padding:5px 9px;border:1px solid #DCE0E7;border-radius:7px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:right;background:#FAFBFD;color:var(--ink);
+  transition:border-color .15s, box-shadow .15s, background .15s;
+}
+.input-unit input{padding-left:22px;}
+.input-unit.pctsign input{padding-left:12px;padding-right:24px;}
+.field input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,167,87,0.16);background:#fff;}
+.field input.hero{background:#FFF8E1;border-color:var(--gold-light);font-weight:700;}
+
+.section-lbl{font-size:8.5px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--slate);margin:5px 0 3px;padding-top:4px;border-top:1px solid #F0F2F5;}
+.section-lbl:first-child{margin-top:0;padding-top:0;border-top:none;}
+
+/* scenario toggle */
+.seg{display:flex;background:#F0F2F6;border-radius:8px;padding:3px;gap:3px;margin-bottom:8px;}
+.seg button{flex:1;border:none;background:none;padding:6px 8px;border-radius:5px;font-family:'Poppins',sans-serif;font-weight:600;font-size:11px;color:var(--slate);cursor:pointer;transition:background .15s,color .15s,box-shadow .15s;}
+.seg button.active{background:#fff;color:var(--navy);box-shadow:0 2px 6px rgba(10,21,38,0.12);}
+
+/* ---------- Live results ---------- */
+.hero-stat{
+  background:linear-gradient(150deg,var(--green-dark),var(--green) 130%);
+  color:#fff;padding:12px 14px 10px;position:relative;
+}
+.hero-stat .label{font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:#BFE9D3;font-weight:700;margin-bottom:3px;}
+.hero-stat .big{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:700;line-height:1;display:flex;align-items:baseline;gap:2px;}
+.hero-stat .big .sym{font-size:16px;font-weight:600;color:#BFE9D3;}
+.hero-stat .cap{font-size:9.5px;color:#CFF0DE;margin-top:2px;}
+.hero-chips{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px;}
+.hero-chips .chip{background:rgba(255,255,255,0.1);border-radius:8px;padding:6px 9px;}
+.hero-chips .chip .k{font-size:8.5px;letter-spacing:0.6px;text-transform:uppercase;color:#BFE9D3;font-weight:700;margin-bottom:2px;}
+.hero-chips .chip .v{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;}
+
+.pay-hero{
+  margin:8px 12px 0;
+  background:linear-gradient(120deg,var(--navy) 0%,#1B3E63 100%);
+  border-radius:10px;
+  padding:10px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:relative;
+  overflow:hidden;
+}
+.pay-hero::before{
+  content:"";
+  position:absolute;right:-20px;top:-30px;width:100px;height:100px;border-radius:50%;
+  border:1px solid rgba(201,167,87,0.25);
+}
+.pay-hero .k{font-size:9.5px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--gold-light);position:relative;z-index:1;}
+.pay-hero .v{font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:#fff;letter-spacing:-0.5px;position:relative;z-index:1;}
+.pay-hero .v::before{content:"$";color:var(--gold-light);margin-right:1px;font-size:16px;}
+.pay-hero .v .unit{font-size:11px;font-weight:600;color:#AEB9CC;margin-left:4px;}
+
+.breakdown{padding:8px 12px 1px;}
+.breakdown .section-lbl{margin-top:0;padding-top:0;border-top:none;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:5px;}
+.stat-box{background:#F7F8FA;border:1px solid var(--line);border-radius:7px;padding:4px 7px;}
+.stat-box.hi{background:linear-gradient(135deg,#E7F7EE,#D8F1E4);border-color:var(--green-tint-line);box-shadow:inset 0 0 0 1px rgba(30,142,90,0.08);}
+.stat-box .k{font-size:7.5px;letter-spacing:0.4px;text-transform:uppercase;color:var(--slate);font-weight:700;margin-bottom:1px;}
+.stat-box .v{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;color:var(--navy);}
+.stat-box.hi .v{color:var(--green-dark);}
+.stat-box .v.negative{color:var(--red);}
+.stat-box.hi .v.negative{color:var(--red);}
+
+table.wk{width:100%;border-collapse:collapse;font-size:11px;}
+table.wk th{text-align:left;font-size:8.5px;letter-spacing:0.6px;text-transform:uppercase;color:var(--slate);font-weight:700;padding:3px 4px;border-bottom:1px solid var(--line);}
+table.wk th:not(:first-child){text-align:right;}
+table.wk td{padding:4px 4px;border-bottom:1px solid #F0F2F5;font-family:'IBM Plex Mono',monospace;}
+table.wk td:not(:first-child){text-align:right;}
+table.wk td:first-child{font-family:'Poppins',sans-serif;font-weight:600;color:#3B4250;}
+table.wk tr.total td{font-weight:700;color:var(--green-dark);border-bottom:none;padding-top:6px;}
+
+.cand-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 20px 4px;border-top:1px solid var(--line);}
+.cand-row .field{padding:6px 0;}
+.cand-row input{width:100%;text-align:left;font-family:'Poppins',sans-serif;}
+
+footer{text-align:center;color:var(--slate);font-size:9px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.4px;margin-top:8px;text-transform:uppercase;}
+
+.tab-view{display:none;}
+.tab-view.active{display:block;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <img src="data:image/png;base64,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1qS/Egn8STgEQQxx+7fMaw72/u7w/wCkTvIP7pPH5dK7C38CyuQbq7RB3WNd36nFbVl4T0izIY2/nuP4pju/Tp+lethskrvVxUfUX9oYHD6wV35f5s8ystE1HVX22dq7rnBfGFH4niuy0f4d20BWbVJftDjnyUyEH1PU/pXbKqooVVCqOAAMAUte/h8rpUtZe8/w+44MTnmIqrlp+6vLf7/8hkMMVvEsUMaxxqMKiDAH4U+iivTPGbbd2FFFFAgooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/Z" alt="HonorVet Technologies">
+    <div class="brand-tag">Pay Rate Calculator</div>
+  </div>
+  <div class="topbar-tabs">
+    <button class="tb-tab active" data-view="billrate">Bill-Rate Based</button>
+    <button class="tb-tab" data-view="markup">Markup Based</button>
+  </div>
+  <div class="topbar-actions">
+    <button class="tb-btn pdf" onclick="exportPDF()">&darr; PDF</button>
+    <button class="tb-btn xls" onclick="exportExcel()">&darr; Excel</button>
+  </div>
+</div>
+
+<div class="banner" id="bannerText">
+  <div class="chk">&#10003;</div>
+  <div><b>Bill-Rate Based Account</b> — enter the W2 base pay and per diem once; both the <b>W2 Only</b> and <b>W2 + Per Diem</b> outcomes are shown side by side.</div>
+</div>
+
+<div class="wrap">
+
+<!-- ============ BILL-RATE BASED VIEW ============ -->
+<div class="tab-view active" id="view-billrate">
+  <div class="cols cols-clubbed">
+
+    <div class="input-stack">
+    <!-- COLUMN 1 : RATE INPUTS -->
+    <div class="panel blue">
+      <div class="panel-head">
+        <div class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
+        <div><h3>Billing to Client</h3><span>Rate Inputs</span></div>
+      </div>
+      <div class="panel-body">
+        <div class="field"><label>Bill Rate<span class="req-dot"></span><span class="sub">$/hr</span></label>
+          <div class="input-unit"><span>$</span><input type="number" id="br_billRate" value="100" step="0.01" class="hero"></div>
+        </div>
+        <div class="field"><label>MSP Fee<span class="sub">% of bill rate</span></label>
+          <div class="input-unit pctsign"><input type="number" id="br_mspPct" value="5" step="0.1"><span>%</span></div>
+        </div>
+        <div class="field"><label>Weekly Hours<span class="req-dot"></span></label>
+          <input type="number" id="br_weeklyHours" value="40" step="1">
+        </div>
+        <input type="hidden" id="br_mspFee">
+        <input type="hidden" id="br_netBillRate">
+
+        <div class="section-lbl">Reference</div>
+        <p class="panel-note">Bill Rate and MSP Fee drive the backend margin calculation. The candidate never sees these figures.</p>
+      </div>
+    </div>
+
+    <!-- COLUMN 2 : CANDIDATE PACKAGE INPUTS -->
+    <div class="panel gold">
+      <div class="panel-head">
+        <div class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1"></circle></svg></div>
+        <div><h3>Candidate Package</h3><span>What the candidate receives</span></div>
+      </div>
+      <div class="panel-body">
+        <div class="field"><label>W2 Base Pay<span class="req-dot"></span><span class="sub">$/hr, before per diem</span></label>
+          <div class="input-unit"><span>$</span><input type="number" id="br_w2Base" value="24" step="0.01" class="hero"></div>
+        </div>
+        <div class="field"><label>Per Diem<span class="req-dot"></span><span class="sub">$/hr allowance</span></label>
+          <div class="input-unit"><span>$</span><input type="number" id="br_perDiem" value="42.88" step="0.01"></div>
+        </div>
+        <input type="hidden" id="br_ohW2Only" value="25">
+        <input type="hidden" id="br_ohW2PerDiem" value="33">
+        <input type="hidden" id="br_pto" value="4.65">
+        <input type="hidden" id="br_tax" value="30">
+
+        <div class="section-lbl">Minimum Wage Lookup<span class="req-dot"></span></div>
+        <div class="mw-lookup">
+          <div class="mw-zip-row">
+            <input type="text" id="br_mwZip" class="mw-zip-input required-field" placeholder="ZIP code (required)" maxlength="5" inputmode="numeric" required>
+            <button class="mw-lookup-btn" onclick="lookupMinWage('br')">Look Up</button>
+          </div>
+          <div class="mw-error" id="br_mwError" style="display:none;">ZIP code is required to confirm minimum wage compliance.</div>
+          <div class="mw-result" id="br_mwResult" style="display:none;">
+            <div class="mw-rate"><span>State Minimum Wage <b id="br_mwStateName"></b></span><b id="br_mwStateRate">$0.00</b></div>
+            <div class="mw-rate"><span>Local / City Minimum Wage</span><b id="br_mwLocalRate">—</b></div>
+            <div class="mw-flag" id="br_mwFlag"></div>
+          </div>
+          <p class="panel-note">Rates are approximate 2026 figures and change by locality — <a href="https://www.dol.gov/agencies/whd/minimum-wage/state" target="_blank" rel="noopener">verify on DOL.gov</a> before finalizing an offer.</p>
+        </div>
+
+        <div class="section-lbl">Candidate Details<span class="req-dot"></span></div>
+        <div class="field"><label>Candidate Name</label><input type="text" id="br_candName" class="required-text" placeholder="Enter name (required)" style="width:100%;text-align:left;font-family:'Poppins',sans-serif;"></div>
+        <div class="field"><label>Role / Position</label><input type="text" id="br_candRole" class="required-text" placeholder="Enter role (required)" style="width:100%;text-align:left;font-family:'Poppins',sans-serif;"></div>
+        <div class="field"><label>Location</label><input type="text" id="br_candLocation" class="required-text" placeholder="City, State (required)" style="width:100%;text-align:left;font-family:'Poppins',sans-serif;"></div>
+        <div class="field"><label>Recruiter</label><input type="text" id="br_candRecruiter" class="required-text" placeholder="Recruiter name (required)" style="width:100%;text-align:left;font-family:'Poppins',sans-serif;"></div>
+        <div class="field"><label>Manager</label><input type="text" id="br_candManager" class="required-text" placeholder="Manager name (required)" style="width:100%;text-align:left;font-family:'Poppins',sans-serif;"></div>
+      </div>
+    </div>
+    </div>
+
+    <!-- COLUMN 2 : LIVE RESULTS, BOTH SCENARIOS SIDE BY SIDE -->
+    <div class="panel green">
+      <div class="panel-head">
+        <div class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"></line><line x1="12" y1="20" x2="12" y2="6"></line><line x1="20" y1="20" x2="20" y2="14"></line><line x1="2" y1="20" x2="22" y2="20"></line></svg></div>
+        <div><h3>Live Results</h3><span>Updates as you type</span></div>
+      </div>
+
+      <div class="results-locked" id="br_resultsLock">
+        <div class="results-lock-ic">&#128274;</div>
+        <div class="results-lock-title">Enter a ZIP Code to View Results</div>
+        <div class="results-lock-msg">Live results are gated behind a valid ZIP lookup so minimum wage compliance is always checked first.</div>
+      </div>
+
+      <div class="scenario-side-by-side" id="br_resultsContent" style="display:none;">
+      <!-- SCENARIO A : W2 ONLY -->
+      <div class="scenario-block scenario-a">
+        <div class="scenario-block-head">
+          <span class="badge badge-gold">A</span>
+          <div><b>W2 Only</b><span>Combined rate, no per diem</span></div>
+        </div>
+        <div class="pay-hero">
+          <div class="k">Hourly Pay Rate</div>
+          <div class="v"><span id="brA_payHero">0.00</span><span class="unit">/hr</span></div>
+        </div>
+        <div class="breakdown">
+          <div class="section-block">
+            <div class="section-lbl">PTO Carve-Out</div>
+            <div class="stat-grid">
+              <div class="stat-box"><div class="k">All-Inclusive Rate</div><div class="v" id="brA_statAllIncl">$0</div></div>
+              <div class="stat-box"><div class="k">PTO Amount</div><div class="v" id="brA_statPTO">$0</div></div>
+            </div>
+          </div>
+          <div class="section-block">
+            <div class="section-lbl">Margin</div>
+            <div class="stat-grid">
+              <div class="stat-box"><div class="k">Loading Cost</div><div class="v" id="brA_statLoading">$0</div></div>
+              <div class="stat-box hi"><div class="k">Hourly Margin</div><div class="v" id="brA_statMargin">$0</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENARIO B : W2 + PER DIEM -->
+      <div class="scenario-block scenario-b">
+        <div class="scenario-block-head">
+          <span class="badge badge-teal">B</span>
+          <div><b>W2 + Per Diem</b><span>Lower base, tax-free per diem</span></div>
+        </div>
+        <div class="pay-hero">
+          <div class="k">Hourly Pay Rate</div>
+          <div class="v"><span id="brB_payHero">0.00</span><span class="unit">/hr</span></div>
+        </div>
+        <div class="breakdown">
+          <div class="section-block">
+            <div class="section-lbl">PTO Carve-Out</div>
+            <div class="stat-grid">
+              <div class="stat-box"><div class="k">All-Inclusive Rate</div><div class="v" id="brB_statAllIncl">$0</div></div>
+              <div class="stat-box hi"><div class="k">Total PTO</div><div class="v" id="brB_statPTOTotal">$0</div></div>
+              <div class="stat-box"><div class="k">PTO on W2</div><div class="v" id="brB_statPTOW2">$0</div></div>
+              <div class="stat-box"><div class="k">PTO on Per Diem</div><div class="v" id="brB_statPTOPD">$0</div></div>
+            </div>
+          </div>
+          <div class="section-block">
+            <div class="section-lbl">Margin</div>
+            <div class="stat-grid">
+              <div class="stat-box"><div class="k">Loading Cost</div><div class="v" id="brB_statLoading">$0</div></div>
+              <div class="stat-box hi"><div class="k">Hourly Margin</div><div class="v" id="brB_statMargin">$0</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ MARKUP BASED VIEW ============ -->
+<div class="tab-view" id="view-markup">
+  <div class="cols">
+
+    <div class="panel blue">
+      <div class="panel-head">
+        <div class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
+        <div><h3>Billing to Client</h3><span>Rate Inputs</span></div>
+      </div>
+      <div class="panel-body">
+        <div class="seg" id="mu_seg">
+          <button class="seg-btn active" data-mode="fromBill">Markup + Bill Rate</button>
+          <button class="seg-btn" data-mode="fromPay">Markup + Pay Rate</button>
+        </div>
+
+        <div class="field" id="mu_billRateField"><label>Bill Rate<span class="req-dot"></span><span class="sub">$/hr</span></label>
+          <div class="input-unit"><span>$</span><input type="number" id="mu_billRate" value="100" step="0.01" class="hero"></div>
+        </div>
+        <div class="field" id="mu_payRateField" style="display:none;"><label>Pay Rate<span class="sub">$/hr, W2</span></label>
+          <div class="input-unit"><span>$</span><input type="number" id="mu_payRateInput" value="70" step="0.01" class="hero"></div>
+        </div>
+        <div class="field"><label>Markup<span class="req-dot"></span><span class="sub">% over pay rate</span></label>
+          <div class="input-unit pctsign"><input type="number" id="mu_markupPct" value="43" step="0.1"><span>%</span></div>
+        </div>
+        <div class="field"><label>MSP Fee<span class="sub">% of bill rate</span></label>
+          <div class="input-unit pctsign"><input type="number" id="mu_mspPct" value="3.5" step="0.1"><span>%</span></div>
+        </div>
+        <input type="hidden" id="mu_billRateCalc">
+        <input type="hidden" id="mu_netBillRate">
+      </div>
+    </div>
+
+    <div class="panel gold">
+      <div class="panel-head">
+        <div class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1"></circle></svg></div>
+        <div><h3>Candidate Package</h3><span>What the candidate receives</span></div>
+      </div>
+      <div class="panel-body">
+        <div class="field"><label>Weekly Hours</label>
+          <input type="number" id="mu_weeklyHours" value="30" step="1">
+        </div>
+
+        <div class="section-lbl">Minimum Wage Lookup<span class="req-dot"></span></div>
+        <div class="mw-lookup">
+          <div class="mw-zip-row">
+            <input type="text" id="mu_mwZip" class="mw-zip-input required-field" placeholder="ZIP code (required)" maxlength="5" inputmode="numeric" required>
+            <button class="mw-lookup-btn" onclick="lookupMinWage('mu')">Look Up</button>
+          </div>
+          <div class="mw-error" id="mu_mwError" style="display:none;">ZIP code is required to confirm minimum wage compliance.</div>
+          <div class="mw-result" id="mu_mwResult" style="display:none;">
+            <div class="mw-rate"><span>State Minimum Wage <b id="mu_mwStateName"></b></span><b id="mu_mwStateRate">$0.00</b></div>
+            <div class="mw-rate"><span>Local / City Minimum Wage</span><b id="mu_mwLocalRate">—</b></div>
+            <div class="mw-flag" id="mu_mwFlag"></div>
+          </div>
+          <p class="panel-note">Rates are approximate 2026 figures and change by locality — <a href="https://www.dol.gov/agencies/whd/minimum-wage/state" target="_blank" rel="noopener">verify on DOL.gov</a> before finalizing an offer.</p>
+        </div>
+
+        <div class="section-lbl">Candidate Details<span class="req-dot"></span></div>
+        <div class="field"><label>Candidate Name</label><input type="text" id="mu_candName" class="required-text" placeholder="Enter name (required)" style="width:100%;text-align:left;font-family:'Poppins',sans-serif;"></div>
+        <div class="field"><label>Role / Position</label><input type="text" id="mu_candRole" class="required-text" placeholder="Enter role (required)" style="width:100%;text-align:left;font-family:'Poppins',sans-serif;"></div>
+        <div class="field"><label>Location</label><input type="text" id="mu_candLocation" class="required-text" placeholder="City, State (required)" style="width:100%;text-align:left;font-family:'Poppins',sans-serif;"></div>
+        <div class="field"><label>Recruiter</label><input type="text" id="mu_candRecruiter" class="required-text" placeholder="Recruiter name (required)" style="width:100%;text-align:left;font-family:'Poppins',sans-serif;"></div>
+        <div class="field"><label>Manager</label><input type="text" id="mu_candManager" class="required-text" placeholder="Manager name (required)" style="width:100%;text-align:left;font-family:'Poppins',sans-serif;"></div>
+      </div>
+    </div>
+
+    <div class="panel green">
+      <div class="panel-head">
+        <div class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"></line><line x1="12" y1="20" x2="12" y2="6"></line><line x1="20" y1="20" x2="20" y2="14"></line><line x1="2" y1="20" x2="22" y2="20"></line></svg></div>
+        <div><h3>Live Results</h3><span>Updates as you type</span></div>
+      </div>
+
+      <div class="results-locked" id="mu_resultsLock">
+        <div class="results-lock-ic">&#128274;</div>
+        <div class="results-lock-title">Enter a ZIP Code to View Results</div>
+        <div class="results-lock-msg">Live results are gated behind a valid ZIP lookup so minimum wage compliance is always checked first.</div>
+      </div>
+
+      <div id="mu_resultsContent" style="display:none;">
+      <div class="pay-hero">
+        <div class="k">Hourly Pay Rate</div>
+        <div class="v"><span id="mu_payHero">0.00</span><span class="unit">/hr</span></div>
+      </div>
+      <div class="breakdown">
+        <div class="section-block">
+          <div class="section-lbl">Margin</div>
+          <div class="stat-grid">
+            <div class="stat-box"><div class="k">Loading Cost</div><div class="v" id="mu_statLoading">$0</div></div>
+            <div class="stat-box hi"><div class="k">Hourly Margin</div><div class="v" id="mu_statMargin">$0</div></div>
+          </div>
+        </div>
+        <div class="section-block">
+          <div class="section-lbl">Weekly Breakdown</div>
+          <table class="wk">
+            <thead><tr><th>Component</th><th>Weekly</th></tr></thead>
+            <tbody id="mu_wkBody"></tbody>
+          </table>
+        </div>
+      </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>honorvettech.com &nbsp;·&nbsp; Internal recruiter tool &nbsp;·&nbsp; Formulas mirror source reference workbooks &nbsp;·&nbsp; v1.0</footer>
+
+</div>
+
+<script>
+function fmt(n){ if (isNaN(n)) return "$0.00"; return "$" + n.toFixed(2); }
+function fmtInt(n){ if (isNaN(n)) return "0"; return n.toFixed(1); }
+
+/* =====================================================
+   MINIMUM WAGE LOOKUP (approximate 2026 rates, by ZIP)
+   ===================================================== */
+const MIN_WAGE_2026 = {
+  "Alabama": 7.25, "Alaska": 13.00, "Arizona": 15.15, "Arkansas": 11.00, "California": 16.90,
+  "Colorado": 15.16, "Connecticut": 16.94, "Delaware": 15.00, "District of Columbia": 17.95,
+  "Florida": 15.00, "Georgia": 7.25, "Hawaii": 16.00, "Idaho": 7.25, "Illinois": 15.00,
+  "Indiana": 7.25, "Iowa": 7.25, "Kansas": 7.25, "Kentucky": 7.25, "Louisiana": 7.25,
+  "Maine": 15.10, "Maryland": 15.00, "Massachusetts": 15.00, "Michigan": 13.73, "Minnesota": 11.13,
+  "Mississippi": 7.25, "Missouri": 15.00, "Montana": 10.55, "Nebraska": 15.00, "Nevada": 12.00,
+  "New Hampshire": 7.25, "New Jersey": 15.49, "New Mexico": 12.00, "New York": 16.50,
+  "North Carolina": 7.25, "North Dakota": 7.25, "Ohio": 10.95, "Oklahoma": 7.25, "Oregon": 14.20,
+  "Pennsylvania": 7.25, "Rhode Island": 15.00, "South Carolina": 7.25, "South Dakota": 11.50,
+  "Tennessee": 7.25, "Texas": 7.25, "Utah": 7.25, "Vermont": 14.42, "Virginia": 15.00,
+  "Washington": 17.13, "West Virginia": 8.75, "Wisconsin": 7.25, "Wyoming": 7.25
+};
+
+/* ZIP3 prefix -> state, standard USPS 3-digit ranges */
+const ZIP3_STATE_RANGES = [
+  [5,6,"Puerto Rico"],[7,9,"Puerto Rico"],[10,27,"Massachusetts"],[28,29,"Rhode Island"],
+  [30,38,"New Hampshire"],[39,49,"Maine"],[50,59,"Vermont"],[60,69,"Connecticut"],
+  [70,89,"New Jersey"],[100,149,"New York"],[150,196,"Pennsylvania"],[197,199,"Delaware"],
+  [200,205,"District of Columbia"],[206,219,"Maryland"],[220,246,"Virginia"],[247,268,"West Virginia"],
+  [270,289,"North Carolina"],[290,299,"South Carolina"],[300,319,"Georgia"],[398,399,"Georgia"],
+  [320,349,"Florida"],[350,369,"Alabama"],[370,385,"Tennessee"],[386,397,"Mississippi"],
+  [400,427,"Kentucky"],[430,458,"Ohio"],[459,479,"Indiana"],[480,499,"Michigan"],
+  [500,528,"Iowa"],[530,549,"Wisconsin"],[550,567,"Minnesota"],[570,577,"South Dakota"],
+  [580,588,"North Dakota"],[590,599,"Montana"],[600,629,"Illinois"],[630,658,"Missouri"],
+  [660,679,"Kansas"],[680,693,"Nebraska"],[700,714,"Louisiana"],[716,729,"Arkansas"],
+  [730,731,"Oklahoma"],[734,741,"Oklahoma"],[743,749,"Oklahoma"],[750,799,"Texas"],[885,885,"Texas"],
+  [800,816,"Colorado"],[820,831,"Wyoming"],[832,838,"Idaho"],[840,847,"Utah"],
+  [850,865,"Arizona"],[870,884,"New Mexico"],[889,898,"Nevada"],[900,961,"California"],
+  [967,968,"Hawaii"],[970,979,"Oregon"],[980,994,"Washington"],[995,999,"Alaska"]
+];
+
+/* Curated local/city minimum wage ordinances that exceed their state rate, keyed by ZIP3 */
+const LOCAL_MIN_WAGE = {
+  "981": { city: "Seattle, WA", rate: 20.76 },
+  "941": { city: "San Francisco, CA", rate: 18.67 },
+  "940": { city: "Mountain View / Bay Area, CA", rate: 18.20 },
+  "900": { city: "Los Angeles, CA", rate: 17.28 },
+  "902": { city: "Los Angeles, CA", rate: 17.28 },
+  "100": { city: "New York City, NY", rate: 17.00 },
+  "101": { city: "New York City, NY", rate: 17.00 },
+  "111": { city: "New York City, NY", rate: 17.00 },
+  "606": { city: "Chicago, IL", rate: 16.20 },
+  "802": { city: "Denver, CO", rate: 18.81 },
+  "972": { city: "Portland Metro, OR", rate: 15.45 },
+  "860": { city: "Flagstaff, AZ", rate: 17.85 },
+  "875": { city: "Santa Fe, NM", rate: 14.60 }
+};
+
+function resolveStateFromZip(zip){
+  const z3 = parseInt(zip.substring(0,3), 10);
+  if (isNaN(z3)) return null;
+  for (const [lo, hi, state] of ZIP3_STATE_RANGES){
+    if (z3 >= lo && z3 <= hi) return state;
+  }
+  return null;
+}
+
+function lookupMinWage(scope){
+  const zipInput = document.getElementById(scope + "_mwZip");
+  const zip = zipInput.value.trim();
+  const resultBox = document.getElementById(scope + "_mwResult");
+  const errorMsg = document.getElementById(scope + "_mwError");
+
+  if (!/^\d{5}$/.test(zip)){
+    resultBox.style.display = "none";
+    zipInput.classList.add("invalid");
+    errorMsg.style.display = "block";
+    window["__mwApplicable_" + scope] = undefined;
+    toggleResultsLock(scope);
+    return;
+  }
+  zipInput.classList.remove("invalid");
+  errorMsg.style.display = "none";
+
+  const state = resolveStateFromZip(zip);
+  if (!state || !(state in MIN_WAGE_2026)){
+    resultBox.style.display = "block";
+    document.getElementById(scope + "_mwStateName").textContent = "";
+    document.getElementById(scope + "_mwStateRate").textContent = "—";
+    document.getElementById(scope + "_mwLocalRate").textContent = "—";
+    const flag = document.getElementById(scope + "_mwFlag");
+    flag.className = "mw-flag warn";
+    flag.textContent = "ZIP not recognized — check the code and try again";
+    window["__mwApplicable_" + scope] = undefined;
+    toggleResultsLock(scope);
+    return;
+  }
+
+  const stateRate = MIN_WAGE_2026[state];
+  const zip3 = zip.substring(0,3);
+  const local = LOCAL_MIN_WAGE[zip3];
+
+  resultBox.style.display = "block";
+  document.getElementById(scope + "_mwStateName").textContent = `(${state})`;
+  document.getElementById(scope + "_mwStateRate").textContent = fmt(stateRate);
+  document.getElementById(scope + "_mwLocalRate").textContent = local ? `${fmt(local.rate)} — ${local.city}` : "No local ordinance found";
+
+  // store the higher-of applicable rate for compliance checks
+  window["__mwApplicable_" + scope] = local ? Math.max(stateRate, local.rate) : stateRate;
+  window["__mwWasBelow_" + scope] = false;
+
+  if (scope === "br") calcBR(); else calcMU();
+}
+
+function checkMinWage(scope, hourlyRate){
+  const applicable = window["__mwApplicable_" + scope];
+  const flag = document.getElementById(scope + "_mwFlag");
+  if (applicable === undefined) return;
+
+  const isBelow = hourlyRate < applicable;
+
+  if (isBelow){
+    flag.className = "mw-flag warn";
+    flag.textContent = `Below applicable minimum wage by ${fmt(applicable - hourlyRate)}/hr`;
+  } else {
+    flag.className = "mw-flag ok";
+    flag.textContent = `Meets applicable minimum wage`;
+  }
+
+  const wasBelow = window["__mwWasBelow_" + scope];
+  if (isBelow && !wasBelow){
+    showMinWageModal(`The W2 rate of ${fmt(hourlyRate)}/hr is below the applicable minimum wage of ${fmt(applicable)}/hr for this ZIP code.`);
+  }
+  window["__mwWasBelow_" + scope] = isBelow;
+}
+
+function showMinWageModal(message){
+  document.getElementById("mwModalMsg").textContent = message;
+  document.getElementById("mwModalOverlay").classList.add("show");
+}
+function closeMinWageModal(){
+  document.getElementById("mwModalOverlay").classList.remove("show");
+}
+
+
+/* ---------- Top-level view tabs ---------- */
+document.querySelectorAll('.tb-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tb-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-view').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    document.getElementById('bannerText').innerHTML = btn.dataset.view === 'billrate'
+      ? '<div class="chk">&#10003;</div><div><b>Bill-Rate Based Account</b> — enter the W2 base pay and per diem once; both the <b>W2 Only</b> and <b>W2 + Per Diem</b> outcomes are shown side by side.</div>'
+      : '<div class="chk">&#10003;</div><div><b>Markup Based Account</b> — pay rate is worked back from the bill rate and the markup you are targeting.</div>';
+    activeScope = btn.dataset.view === 'billrate' ? 'br' : 'mu';
+  });
+});
+let activeScope = 'br';
+
+/* =====================================================
+   BILL-RATE BASED ACCOUNT
+   ===================================================== */
+function calcBR(){
+  const billRate = parseFloat(document.getElementById("br_billRate").value) || 0;
+  const mspPct = (parseFloat(document.getElementById("br_mspPct").value) || 0) / 100;
+  const weeklyHours = parseFloat(document.getElementById("br_weeklyHours").value) || 0;
+
+  const w2Base = parseFloat(document.getElementById("br_w2Base").value) || 0;
+  const perDiem = parseFloat(document.getElementById("br_perDiem").value) || 0;
+  const ptoPct = (parseFloat(document.getElementById("br_pto").value) || 0) / 100;
+
+  const mspFee = billRate * mspPct;
+  const netBillRate = billRate - mspFee;
+  document.getElementById("br_mspFee").value = fmt(mspFee);
+  document.getElementById("br_netBillRate").value = fmt(netBillRate);
+
+  /* ---- Scenario A: W2 Only (combined rate) ---- */
+  const w2Only = w2Base + perDiem;
+  const ptoA = w2Only * ptoPct;
+  const wageAfterPtoA = w2Only - ptoA;
+  const loadingA = wageAfterPtoA * 1.25;
+  const marginA = netBillRate - loadingA;
+
+  document.getElementById("brA_payHero").textContent = wageAfterPtoA.toFixed(2);
+  document.getElementById("brA_statAllIncl").textContent = fmt(w2Only);
+  document.getElementById("brA_statPTO").textContent = fmt(ptoA);
+  document.getElementById("brA_statLoading").textContent = fmt(loadingA);
+  const marginACell = document.getElementById("brA_statMargin");
+  marginACell.textContent = fmt(marginA);
+  marginACell.classList.toggle("negative", marginA < 0);
+
+  /* ---- Scenario B: W2 + Per Diem ---- */
+  const ptoOnW2 = w2Base * ptoPct;
+  const ptoOnPerDiem = perDiem * ptoPct;
+  const ptoTotalB = ptoOnW2 + ptoOnPerDiem;
+  const wageAfterPtoOnW2B = w2Base - ptoOnW2;
+  const wageAfterPtoOnPerDiemB = perDiem - ptoOnPerDiem;
+  const wageAfterPtoB = wageAfterPtoOnW2B + wageAfterPtoOnPerDiemB;
+  const loadingB = wageAfterPtoB * 1.25;
+  const marginB = netBillRate - loadingB;
+
+  document.getElementById("brB_payHero").textContent = wageAfterPtoB.toFixed(2);
+  document.getElementById("brB_statAllIncl").textContent = fmt(w2Base + perDiem);
+  document.getElementById("brB_statPTOW2").textContent = fmt(ptoOnW2);
+  document.getElementById("brB_statPTOPD").textContent = fmt(ptoOnPerDiem);
+  document.getElementById("brB_statPTOTotal").textContent = fmt(ptoTotalB);
+  document.getElementById("brB_statLoading").textContent = fmt(loadingB);
+  const marginBCell = document.getElementById("brB_statMargin");
+  marginBCell.textContent = fmt(marginB);
+  marginBCell.classList.toggle("negative", marginB < 0);
+
+  checkMinWage("br", w2Base);
+  toggleResultsLock("br");
+
+  brComputed = {
+    w2: w2Base, perDiem, weeklyHours,
+    weeklyGross: w2Base * weeklyHours,
+    weeklyPerDiem: perDiem * weeklyHours,
+    totalWeekly: (w2Base + perDiem) * weeklyHours,
+    annualized: (w2Base + perDiem) * weeklyHours * 52,
+    scenarioName: "W2 + Per Diem"
+  };
+}
+
+/* =====================================================
+   MARKUP BASED ACCOUNT
+   ===================================================== */
+let muComputed = {};
+let muMode = "fromBill";
+
+document.querySelectorAll('#mu_seg .seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#mu_seg .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    muMode = btn.dataset.mode;
+    const fromBill = muMode === "fromBill";
+    document.getElementById('mu_billRateField').style.display = fromBill ? "flex" : "none";
+    document.getElementById('mu_payRateField').style.display = fromBill ? "none" : "flex";
+    calcMU();
+  });
+});
+
+function calcMU(){
+  const markupPct = (parseFloat(document.getElementById("mu_markupPct").value) || 0) / 100;
+  const mspPct = (parseFloat(document.getElementById("mu_mspPct").value) || 0) / 100;
+  const weeklyHours = parseFloat(document.getElementById("mu_weeklyHours").value) || 0;
+
+  let billRate, payRate;
+  if (muMode === "fromBill"){
+    billRate = parseFloat(document.getElementById("mu_billRate").value) || 0;
+    payRate = billRate / (1 + markupPct);
+  } else {
+    payRate = parseFloat(document.getElementById("mu_payRateInput").value) || 0;
+    billRate = payRate * (1 + markupPct);
+    document.getElementById("mu_billRateCalc").value = fmt(billRate);
+  }
+
+  const netBillRate = billRate - (billRate * mspPct);
+  const loadingCost = payRate * 1.25;
+  const hourlyMargin = netBillRate - loadingCost;
+
+  document.getElementById("mu_netBillRate").value = fmt(netBillRate);
+  document.getElementById("mu_payHero").textContent = payRate.toFixed(2);
+  document.getElementById("mu_statLoading").textContent = fmt(loadingCost);
+  const marginCell = document.getElementById("mu_statMargin");
+  marginCell.textContent = fmt(hourlyMargin);
+  marginCell.classList.toggle("negative", hourlyMargin < 0);
+
+  checkMinWage("mu", payRate);
+  toggleResultsLock("mu");
+
+  const weeklyGross = payRate * weeklyHours;
+  const totalWeekly = weeklyGross;
+  const annualized = totalWeekly * 52;
+
+  const rows = [
+    ["W2 Gross Pay", fmt(weeklyGross)],
+    ["<b>Total Weekly Package</b>", `<b>${fmt(totalWeekly)}</b>`, "total"],
+    ["Estimated Annual", fmt(annualized)],
+  ];
+
+  const body = document.getElementById("mu_wkBody");
+  body.innerHTML = "";
+  rows.forEach(([label, val, cls]) => {
+    const tr = document.createElement("tr");
+    if (cls) tr.className = cls;
+    tr.innerHTML = `<td>${label}</td><td>${val}</td>`;
+    body.appendChild(tr);
+  });
+
+  muComputed = { w2: payRate, perDiem: 0, weeklyHours, weeklyGross, weeklyPerDiem: 0, totalWeekly, annualized, scenarioName: "Markup Based Account" };
+}
+
+/* =====================================================
+   EXPORT (shared, uses whichever tab is active)
+   ===================================================== */
+function getPackageRowsForExport(){
+  const scope = activeScope;
+  const name = document.getElementById(scope + "_candName").value || "Candidate";
+  const role = document.getElementById(scope + "_candRole").value || "—";
+  const location = document.getElementById(scope + "_candLocation").value || "—";
+  const recruiter = document.getElementById(scope + "_candRecruiter").value || "—";
+  const manager = document.getElementById(scope + "_candManager").value || "—";
+  const computed = scope === 'br' ? brComputed : muComputed;
+  const label = scope === 'br' ? `Bill-Rate Based · ${computed.scenarioName}` : computed.scenarioName;
+
+  const rows = [
+    ["Candidate Name", name],
+    ["Role / Position", role],
+    ["Location", location],
+    ["Recruiter", recruiter],
+    ["Manager", manager],
+    ["Account Type", label],
+    ["Pay Rate ($/hr)", computed.w2.toFixed(2)],
+    ["Weekly Hours", computed.weeklyHours.toFixed(1)],
+    ["Weekly Gross Pay", computed.weeklyGross.toFixed(2)],
+  ];
+  if (computed.perDiem > 0){
+    rows.push(["Per Diem ($/hr)", computed.perDiem.toFixed(2)]);
+    rows.push(["Weekly Per Diem", computed.weeklyPerDiem.toFixed(2)]);
+  }
+  rows.push(["Total Weekly Package", computed.totalWeekly.toFixed(2)]);
+  rows.push(["Estimated Annual Package", computed.annualized.toFixed(2)]);
+  return { rows, name };
+}
+
+function zipIsValid(scope){
+  const zip = document.getElementById(scope + "_mwZip").value.trim();
+  return /^\d{5}$/.test(zip) && window["__mwApplicable_" + scope] !== undefined;
+}
+
+function toggleResultsLock(scope){
+  const unlocked = zipIsValid(scope);
+  const lockId = scope === "br" ? "br_resultsLock" : "mu_resultsLock";
+  const contentId = scope === "br" ? "br_resultsContent" : "mu_resultsContent";
+  document.getElementById(lockId).style.display = unlocked ? "none" : "flex";
+  document.getElementById(contentId).style.display = unlocked ? (scope === "br" ? "grid" : "block") : "none";
+}
+
+const CANDIDATE_DETAIL_FIELDS = ["candName", "candRole", "candLocation", "candRecruiter", "candManager"];
+
+function candidateDetailsValid(scope){
+  return CANDIDATE_DETAIL_FIELDS.every(f => document.getElementById(scope + "_" + f).value.trim() !== "");
+}
+
+function validateCandidateDetails(scope){
+  let firstInvalid = null;
+  CANDIDATE_DETAIL_FIELDS.forEach(f => {
+    const el = document.getElementById(scope + "_" + f);
+    if (el.value.trim() === ""){
+      el.classList.add("invalid");
+      if (!firstInvalid) firstInvalid = el;
+    } else {
+      el.classList.remove("invalid");
+    }
+  });
+  return firstInvalid;
+}
+
+function requireZipOrWarn(){
+  const scope = activeScope;
+
+  const firstInvalidDetail = validateCandidateDetails(scope);
+  if (firstInvalidDetail){
+    firstInvalidDetail.scrollIntoView({ behavior: "smooth", block: "center" });
+    firstInvalidDetail.focus();
+    showMinWageModal("Please fill in all Candidate Details (Name, Role, Location, Recruiter, Manager) before exporting the pay package.");
+    return false;
+  }
+
+  if (zipIsValid(scope)) return true;
+  const zipInput = document.getElementById(scope + "_mwZip");
+  const errorMsg = document.getElementById(scope + "_mwError");
+  zipInput.classList.add("invalid");
+  errorMsg.style.display = "block";
+  zipInput.scrollIntoView({ behavior: "smooth", block: "center" });
+  zipInput.focus();
+  showMinWageModal("Please enter and look up a valid ZIP code before exporting the pay package — it's required to confirm minimum wage compliance.");
+  return false;
+}
+
+function exportExcel(){
+  if (!requireZipOrWarn()) return;
+  const { rows, name } = getPackageRowsForExport();
+  const wb = XLSX.utils.book_new();
+  const wsData = [["HonorVet Technologies — Candidate Pay Package"], [], ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [{ wch: 28 }, { wch: 24 }];
+  XLSX.utils.book_append_sheet(wb, ws, "Pay Package");
+  XLSX.writeFile(wb, `Pay_Package_${name.replace(/\s+/g,'_')}.xlsx`);
+}
+
+function exportPDF(){
+  if (!requireZipOrWarn()) return;
+  const { rows, name } = getPackageRowsForExport();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFillColor(10, 21, 38);
+  doc.rect(0, 0, 210, 30, 'F');
+  doc.setDrawColor(201, 167, 87);
+  doc.setLineWidth(0.6);
+  doc.line(0, 30, 210, 30);
+  doc.setTextColor(255,255,255);
+  doc.setFont("times", "bold");
+  doc.setFontSize(17);
+  doc.text("HonorVet Technologies", 14, 14);
+  doc.setFontSize(10.5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(228, 205, 147);
+  doc.text("CANDIDATE PAY PACKAGE", 14, 22);
+
+  doc.setTextColor(30,30,30);
+  doc.autoTable({
+    startY: 40,
+    head: [["Detail", "Value"]],
+    body: rows,
+    theme: 'grid',
+    headStyles: { fillColor: [10,21,38], textColor: [228,205,147], fontStyle: 'bold' },
+    styles: { fontSize: 11, cellPadding: 5 },
+    alternateRowStyles: { fillColor: [250, 247, 238] },
+    columnStyles: { 0: { fontStyle: 'bold' } }
+  });
+
+  doc.setDrawColor(201, 167, 87);
+  doc.setLineWidth(0.4);
+  doc.line(14, doc.internal.pageSize.height - 16, 196, doc.internal.pageSize.height - 16);
+  doc.setFontSize(8.5);
+  doc.setTextColor(120,120,120);
+  doc.text("honorvettech.com  ·  Service-Disabled Veteran Owned Small Business", 14, doc.internal.pageSize.height - 10);
+
+  doc.save(`Pay_Package_${name.replace(/\s+/g,'_')}.pdf`);
+}
+
+/* ---------- Init ---------- */
+let brComputed = {};
+["br_billRate","br_mspPct","br_weeklyHours","br_w2Base","br_perDiem","br_ohW2Only","br_ohW2PerDiem","br_pto","br_tax"].forEach(id => document.getElementById(id).addEventListener("input", calcBR));
+["mu_billRate","mu_payRateInput","mu_markupPct","mu_mspPct","mu_weeklyHours"].forEach(id => document.getElementById(id).addEventListener("input", calcMU));
+
+calcBR();
+calcMU();
+</script>
+
+<div class="mw-modal-overlay" id="mwModalOverlay">
+  <div class="mw-modal">
+    <div class="mw-modal-ic">&#9888;</div>
+    <div class="mw-modal-title">Below Minimum Wage</div>
+    <div class="mw-modal-msg" id="mwModalMsg"></div>
+    <button class="mw-modal-btn" onclick="closeMinWageModal()">Got It</button>
+  </div>
+</div>
+
+</body>
+</html>
